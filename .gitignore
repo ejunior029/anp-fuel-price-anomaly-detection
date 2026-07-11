@@ -1,0 +1,28 @@
+﻿# Ambiente virtual
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Dados e modelos (geralmente pesados - nao versionar)
+data/
+models/
+*.csv
+*.parquet
+*.pkl
+*.joblib
+
+# Saidas
+reports/*.png
+reports/*.html
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
