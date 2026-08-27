@@ -1,6 +1,6 @@
 {
   "mes_referencia": "2025-12",
-  "gerado_em": "2026-08-27T02:30:50+00:00",
+  "gerado_em": "2026-08-27T02:42:59+00:00",
   "total_registros": 52336,
   "total_anomalias": 943,
   "pct_anomalias": 1.8,
@@ -45,7 +45,7 @@
       }
     },
     "AP": {
-      "nome": "Amapa",
+      "nome": "Amapá",
       "registros": 56,
       "anomalias": 12,
       "pct_anomalias": 21.43,
@@ -71,7 +71,7 @@
       }
     },
     "CE": {
-      "nome": "Ceara",
+      "nome": "Ceará",
       "registros": 1632,
       "anomalias": 2,
       "pct_anomalias": 0.12,
@@ -97,7 +97,7 @@
       }
     },
     "ES": {
-      "nome": "Espirito Santo",
+      "nome": "Espírito Santo",
       "registros": 1046,
       "anomalias": 12,
       "pct_anomalias": 1.15,
@@ -110,7 +110,7 @@
       }
     },
     "GO": {
-      "nome": "Goias",
+      "nome": "Goiás",
       "registros": 2018,
       "anomalias": 2,
       "pct_anomalias": 0.1,
@@ -123,7 +123,7 @@
       }
     },
     "MA": {
-      "nome": "Maranhao",
+      "nome": "Maranhão",
       "registros": 965,
       "anomalias": 48,
       "pct_anomalias": 4.97,
@@ -175,7 +175,7 @@
       }
     },
     "PA": {
-      "nome": "Para",
+      "nome": "Pará",
       "registros": 1032,
       "anomalias": 11,
       "pct_anomalias": 1.07,
@@ -188,7 +188,7 @@
       }
     },
     "PB": {
-      "nome": "Paraiba",
+      "nome": "Paraíba",
       "registros": 791,
       "anomalias": 26,
       "pct_anomalias": 3.29,
@@ -214,7 +214,7 @@
       }
     },
     "PI": {
-      "nome": "Piaui",
+      "nome": "Piauí",
       "registros": 669,
       "anomalias": 36,
       "pct_anomalias": 5.38,
@@ -227,7 +227,7 @@
       }
     },
     "PR": {
-      "nome": "Parana",
+      "nome": "Paraná",
       "registros": 3551,
       "anomalias": 36,
       "pct_anomalias": 1.01,
@@ -266,7 +266,7 @@
       }
     },
     "RO": {
-      "nome": "Rondonia",
+      "nome": "Rondônia",
       "registros": 639,
       "anomalias": 15,
       "pct_anomalias": 2.35,
@@ -331,7 +331,7 @@
       }
     },
     "SP": {
-      "nome": "Sao Paulo",
+      "nome": "São Paulo",
       "registros": 15534,
       "anomalias": 340,
       "pct_anomalias": 2.19,

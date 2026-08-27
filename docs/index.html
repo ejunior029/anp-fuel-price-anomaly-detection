@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Radar de Preços Anômalos — ANP</title>
-<meta name="description" content="Mapa ao vivo de anomalias de preço de combustíveis no Brasil, atualizado mensalmente a partir dos dados abertos da ANP.">
+<title>Fuel Price Anomaly Radar — ANP</title>
+<meta name="description" content="Live map of fuel price anomalies across Brazil, updated monthly from ANP's open data.">
 <style>
   :root {
     --bg: #0b0f14;
@@ -172,13 +172,13 @@
 <div class="wrap">
 
   <header class="hero">
-    <span class="kicker">Atualização automática mensal</span>
-    <h1>Radar de Preços Anômalos de Combustíveis</h1>
+    <span class="kicker">Updated automatically every month</span>
+    <h1>Fuel Price Anomaly Radar</h1>
     <p class="subtitle">
-      Mapa gerado a partir do modelo de detecção de anomalias treinado no projeto
-      <a href="https://github.com/ejunior029/anp-fuel-price-anomaly-detection" style="color:var(--accent)">anp-fuel-price-anomaly-detection</a>,
-      aplicado ao levantamento de preços de combustíveis mais recente publicado pela ANP.
-      Sem retreino a cada mês — o mesmo modelo (OneClassSVM, ajustado no notebook <code>04_avaliacao_tuning</code>) pontua os dados novos.
+      Map generated from the anomaly detection model trained in the
+      <a href="https://github.com/ejunior029/anp-fuel-price-anomaly-detection" style="color:var(--accent)">anp-fuel-price-anomaly-detection</a> project,
+      applied to the newest fuel price survey published by ANP (Brazil's oil, gas & biofuels regulator).
+      No retraining every month — the same model (OneClassSVM, tuned in notebook <code>04_avaliacao_tuning</code>) scores the new data.
     </p>
   </header>
 
@@ -187,8 +187,8 @@
 
     <div class="grid">
       <div class="card">
-        <h2>Taxa de anomalia por estado</h2>
-        <p class="card-note">Clique num estado para ver os detalhes ao lado.</p>
+        <h2>Anomaly rate by state</h2>
+        <p class="card-note">Click a state to see the details on the side.</p>
         <svg id="mapa-svg" viewBox="0 0 353.845 367.766" xmlns="http://www.w3.org/2000/svg">
           <g id="grupo-estados">
             <polygon id="AC" class="uf" points="34.662,120.662 27.527,118.949 16.253,117.808 9.973,116.096 2.199,113.858 0.134,114.5 0,116.356 1.532,117.948 2.131,120.037 6.224,124.611 8.221,126.103 8.521,128.191 9.22,129.882 7.523,133.064 8.521,134.258 13.413,133.761 14.313,135.054 17.707,138.932 21.701,138.833 25.695,137.042 26.294,134.457 27.792,133.263 29.688,130.479 30.887,130.479 29.789,134.357 31.187,135.749 31.985,142.015 33.882,144.203 38.176,141.816 41.87,142.412 45.964,142.313 50.357,146.192 52.354,146.391 54.151,142.114 56.848,140.225 63.837,140.026 70.312,136.403 51.502,129.225"></polygon>
@@ -226,31 +226,31 @@
           <span id="legenda-max">—</span>
         </div>
         <p style="font-size:11.5px;color:var(--text-dim);margin-top:8px">
-          Escala não-linear (raiz quadrada) para não deixar o estado mais extremo apagar as diferenças entre os demais.
+          Non-linear (square-root) scale, so the single most extreme state doesn't wash out the differences between the rest.
         </p>
       </div>
 
       <div>
         <div class="card" id="painel-estado">
-          <h2>Detalhe do estado</h2>
-          <div class="placeholder">Clique em um estado no mapa para ver os detalhes aqui.</div>
+          <h2>State detail</h2>
+          <div class="placeholder">Click a state on the map to see its details here.</div>
         </div>
 
         <div class="card" style="margin-top:20px">
-          <h2>Tendência mensal</h2>
-          <p class="card-note">% de registros marcados como anômalos, mês a mês, desde que a automação começou a rodar.</p>
+          <h2>Monthly trend</h2>
+          <p class="card-note">% of records flagged as anomalous, month by month, since the automation started running.</p>
           <svg id="historico-svg" viewBox="0 0 400 110" preserveAspectRatio="none"></svg>
         </div>
       </div>
     </div>
 
     <div class="card" style="margin-top:22px">
-      <h2>Top 15 anomalias do mês (Brasil)</h2>
-      <p class="card-note">Maior score de anomalia do modelo, em todo o país.</p>
+      <h2>Top 15 anomalies this month (Brazil)</h2>
+      <p class="card-note">Highest anomaly score from the model, nationwide.</p>
       <div style="overflow-x:auto">
         <table class="top-lista">
           <thead>
-            <tr><th>UF</th><th>Município</th><th>Revenda</th><th>Produto</th><th>Preço</th><th>Score</th></tr>
+            <tr><th>State</th><th>City</th><th>Station</th><th>Product</th><th>Price</th><th>Score</th></tr>
           </thead>
           <tbody id="top-lista-body"></tbody>
         </table>
@@ -258,39 +258,44 @@
     </div>
 
     <details class="metodologia">
-      <summary>Como esse número é calculado (e uma ressalva honesta)</summary>
+      <summary>How this number is calculated (and an honest caveat)</summary>
       <p>
-        Todo mês, um <a href="https://github.com/ejunior029/anp-fuel-price-anomaly-detection/actions" style="color:var(--accent)">GitHub Actions</a>
-        baixa o levantamento de preços mais recente publicado pela ANP, aplica a mesma engenharia de features e o mesmo modelo
-        (<code>OneClassSVM</code>, <code>contamination=0.01</code>) treinados e avaliados no notebook <code>04_avaliacao_tuning.ipynb</code>
-        do repositório — sem retreinar nada, é scoring de produção sobre dados novos.
+        Every month, a <a href="https://github.com/ejunior029/anp-fuel-price-anomaly-detection/actions" style="color:var(--accent)">GitHub Actions</a> job
+        downloads the newest price survey published by ANP, applies the same feature engineering and the same model
+        (<code>OneClassSVM</code>, <code>contamination=0.01</code>) trained and evaluated in the repository's
+        <code>04_avaliacao_tuning.ipynb</code> notebook — no retraining, it's production scoring on new data.
       </p>
       <p>
-        <b>Ressalva:</b> estados com poucos registros (ex.: AC, AP) têm percentuais mais ruidosos — uma diferença de poucos postos já
-        move bastante o percentual. Além disso, o preço bruto ainda é uma das features do modelo, então estados historicamente mais
-        caros (Norte, em geral) podem aparecer com taxa aparente mais alta mesmo sem nada de anormal acontecendo ali. Leia os números
-        como um radar para investigação, não como veredito.
+        <b>Caveat:</b> states with few records (e.g. Acre, Amapá) get noisier percentages — a handful of stations can already
+        swing the rate a lot. On top of that, raw price is still one of the model's features, so historically more expensive
+        states (the North region, generally) can show a higher apparent rate even with nothing actually wrong going on there.
+        Read these numbers as a lead for investigation, not a verdict.
       </p>
     </details>
 
     <footer>
-      <span>Dados: <a href="https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/serie-historica-de-precos-de-combustiveis" target="_blank">ANP</a> · Código e notebooks: <a href="https://github.com/ejunior029/anp-fuel-price-anomaly-detection" target="_blank">GitHub</a></span>
+      <span>Data: <a href="https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/serie-historica-de-precos-de-combustiveis" target="_blank">ANP</a> · Code and notebooks: <a href="https://github.com/ejunior029/anp-fuel-price-anomaly-detection" target="_blank">GitHub</a></span>
       <span id="rodape-gerado"></span>
     </footer>
   </div>
 
-  <div id="carregando" style="color:var(--text-dim);font-size:14px">Carregando dados mais recentes…</div>
+  <div id="carregando" style="color:var(--text-dim);font-size:14px">Loading the latest data…</div>
   <div id="erro" class="erro-carregamento" style="display:none"></div>
 
 </div>
 
 <script>
 (function () {
-  const NOMES_MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const NOMES_MES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const NOMES_PRODUTO = { 'GASOLINA': 'Gasoline', 'GASOLINA ADITIVADA': 'Additized gasoline', 'ETANOL': 'Ethanol' };
 
   function formatarMes(mesRef) {
     const [ano, mes] = mesRef.split('-').map(Number);
-    return NOMES_MES[mes - 1] + '/' + ano;
+    return NOMES_MES[mes - 1] + ' ' + ano;
+  }
+
+  function nomeProduto(produto) {
+    return NOMES_PRODUTO[produto] || produto;
   }
 
   function corPara(pct, maxPct) {
@@ -315,16 +320,16 @@
     const painel = document.getElementById('painel-estado');
     const pc = dado.pior_caso;
     painel.innerHTML = `
-      <h2>Detalhe do estado</h2>
+      <h2>State detail</h2>
       <div class="uf-nome">${dado.nome} <span style="color:var(--text-dim);font-weight:400">(${uf})</span></div>
-      <div class="uf-sub">${dado.registros} registros analisados neste mês</div>
-      <div class="metric-line"><span>Anomalias detectadas</span><b>${dado.anomalias}</b></div>
-      <div class="metric-line"><span>Taxa de anomalia</span><b>${dado.pct_anomalias.toFixed(2)}%</b></div>
+      <div class="uf-sub">${dado.registros} records analyzed this month</div>
+      <div class="metric-line"><span>Anomalies detected</span><b>${dado.anomalias}</b></div>
+      <div class="metric-line"><span>Anomaly rate</span><b>${dado.pct_anomalias.toFixed(2)}%</b></div>
       <div class="pior-caso">
-        <div class="tag">Caso mais extremo</div>
+        <div class="tag">Most extreme case</div>
         <div style="margin-top:6px">
           ${pc.municipio} — <b>${pc.revenda}</b><br>
-          ${pc.produto}, vendido a R$ ${pc.valor_venda.toFixed(2)} · score ${pc.score.toFixed(2)}
+          ${nomeProduto(pc.produto)}, sold at R$ ${pc.valor_venda.toFixed(2)} · score ${pc.score.toFixed(2)}
         </div>
       </div>
     `;
@@ -363,10 +368,10 @@
       document.getElementById('conteudo').style.display = 'block';
 
       document.getElementById('stat-row').innerHTML = `
-        <div class="stat"><div class="num">${formatarMes(dados.mes_referencia)}</div><div class="label">Mês de referência</div></div>
-        <div class="stat"><div class="num">${dados.total_registros.toLocaleString('pt-BR')}</div><div class="label">Registros analisados</div></div>
-        <div class="stat"><div class="num">${dados.total_anomalias.toLocaleString('pt-BR')}</div><div class="label">Anomalias detectadas</div></div>
-        <div class="stat"><div class="num">${dados.pct_anomalias.toFixed(2)}%</div><div class="label">Taxa geral</div></div>
+        <div class="stat"><div class="num">${formatarMes(dados.mes_referencia)}</div><div class="label">Reference month</div></div>
+        <div class="stat"><div class="num">${dados.total_registros.toLocaleString('en-US')}</div><div class="label">Records analyzed</div></div>
+        <div class="stat"><div class="num">${dados.total_anomalias.toLocaleString('en-US')}</div><div class="label">Anomalies detected</div></div>
+        <div class="stat"><div class="num">${dados.pct_anomalias.toFixed(2)}%</div><div class="label">Overall rate</div></div>
       `;
 
       const maxPct = Math.max(...Object.values(dados.por_estado).map(e => e.pct_anomalias));
@@ -392,7 +397,7 @@
           <td>${row.estado}</td>
           <td>${row.municipio}</td>
           <td>${row.revenda}</td>
-          <td>${row.produto}</td>
+          <td>${nomeProduto(row.produto)}</td>
           <td>R$ ${row.valor_venda.toFixed(2)}</td>
           <td><span class="score-pill">${row.score.toFixed(2)}</span></td>
         </tr>
@@ -402,13 +407,13 @@
 
       const gerado = new Date(dados.gerado_em);
       document.getElementById('rodape-gerado').textContent =
-        'Atualizado em ' + gerado.toLocaleDateString('pt-BR') + ' às ' + gerado.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        'Updated on ' + gerado.toLocaleDateString('en-US') + ' at ' + gerado.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
     })
     .catch(err => {
       document.getElementById('carregando').style.display = 'none';
       const erroEl = document.getElementById('erro');
       erroEl.style.display = 'block';
-      erroEl.textContent = 'Não foi possível carregar os dados (' + err.message + '). Se você acabou de configurar o GitHub Pages, rode o workflow "Atualizar mapa" manualmente em Actions para gerar o primeiro arquivo.';
+      erroEl.textContent = 'Could not load the data (' + err.message + '). If you just set up GitHub Pages, manually run the "Atualizar mapa" workflow in Actions to generate the first file.';
     });
 })();
 </script>
