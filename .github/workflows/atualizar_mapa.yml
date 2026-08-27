@@ -1,0 +1,43 @@
+name: Atualizar mapa de anomalias
+
+on:
+  schedule:
+    # Todo dia 5 do mes, as 12:00 UTC — da tempo da ANP publicar o
+    # levantamento do mes anterior antes da gente tentar buscar.
+    - cron: "0 12 5 * *"
+  workflow_dispatch: {}   # permite rodar manualmente em Actions > Run workflow
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-mapa
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Rodar o pipeline mensal
+        run: python src/pipeline_mensal.py
+
+      - name: Commitar e enviar o JSON atualizado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/dados/latest.json
+          git diff --cached --quiet && echo "Nada novo para commitar." && exit 0
+          git commit -m "Atualizar dados do mapa ($(date -u +%Y-%m))"
+          git push

@@ -11,11 +11,19 @@ __pycache__/
 
 # Dados e modelos (geralmente pesados - nao versionar)
 data/
-models/
+models/*
 *.csv
 *.parquet
 *.pkl
 *.joblib
+
+# Excecao: artefatos finais de producao usados pelo pipeline mensal
+# (src/pipeline_mensal.py + .github/workflows/atualizar_mapa.yml).
+# Pequenos (~50KB juntos) e sao o "modelo publicado", nao um rascunho
+# de experimentacao — por isso ficam versionados de proposito.
+!models/referencia_precos.joblib
+!models/preprocessador.joblib
+!models/melhor_modelo.joblib
 
 # Saidas
 reports/*.png

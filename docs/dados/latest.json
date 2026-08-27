@@ -1,0 +1,490 @@
+{
+  "mes_referencia": "2025-12",
+  "gerado_em": "2026-08-27T01:48:27+00:00",
+  "total_registros": 52336,
+  "total_anomalias": 943,
+  "pct_anomalias": 1.8,
+  "por_estado": {
+    "AC": {
+      "nome": "Acre",
+      "registros": 111,
+      "anomalias": 38,
+      "pct_anomalias": 34.23,
+      "pior_caso": {
+        "municipio": "RIO BRANCO",
+        "revenda": "DANTAS & DANTAS LTDA",
+        "produto": "GASOLINA",
+        "valor_venda": 6.69,
+        "score": 7.3074
+      }
+    },
+    "AL": {
+      "nome": "Alagoas",
+      "registros": 643,
+      "anomalias": 0,
+      "pct_anomalias": 0.0,
+      "pior_caso": {
+        "municipio": "DELMIRO GOUVEIA",
+        "revenda": "COMERCIO DE COMBUSTIVEIS NENZITA LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 5.08,
+        "score": -0.9123
+      }
+    },
+    "AM": {
+      "nome": "Amazonas",
+      "registros": 688,
+      "anomalias": 15,
+      "pct_anomalias": 2.18,
+      "pior_caso": {
+        "municipio": "PARINTINS",
+        "revenda": "M C D CARVALHO & CIA LTDA",
+        "produto": "GASOLINA ADITIVADA",
+        "valor_venda": 8.39,
+        "score": 1.5003
+      }
+    },
+    "AP": {
+      "nome": "Amapa",
+      "registros": 56,
+      "anomalias": 12,
+      "pct_anomalias": 21.43,
+      "pior_caso": {
+        "municipio": "MACAPA",
+        "revenda": "MACHADO & ANDRADE LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 5.79,
+        "score": 6.6123
+      }
+    },
+    "BA": {
+      "nome": "Bahia",
+      "registros": 2580,
+      "anomalias": 2,
+      "pct_anomalias": 0.08,
+      "pior_caso": {
+        "municipio": "VITORIA DA CONQUISTA",
+        "revenda": "ENERGIA E PETROLEO VITORIA DA CONQUISTA COMBUSTIVEIS LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 5.99,
+        "score": 4.8429
+      }
+    },
+    "CE": {
+      "nome": "Ceara",
+      "registros": 1632,
+      "anomalias": 2,
+      "pct_anomalias": 0.12,
+      "pior_caso": {
+        "municipio": "CRATEUS",
+        "revenda": "ALBERI G. DE ARAUJO",
+        "produto": "ETANOL",
+        "valor_venda": 5.88,
+        "score": 2.1868
+      }
+    },
+    "DF": {
+      "nome": "Distrito Federal",
+      "registros": 571,
+      "anomalias": 0,
+      "pct_anomalias": 0.0,
+      "pior_caso": {
+        "municipio": "BRASILIA",
+        "revenda": "M L SOUZA & CIA LTDA",
+        "produto": "GASOLINA",
+        "valor_venda": 6.02,
+        "score": -3.685
+      }
+    },
+    "ES": {
+      "nome": "Espirito Santo",
+      "registros": 1046,
+      "anomalias": 12,
+      "pct_anomalias": 1.15,
+      "pior_caso": {
+        "municipio": "SERRA",
+        "revenda": "AUTO POSTO MORADA LTDA",
+        "produto": "GASOLINA ADITIVADA",
+        "valor_venda": 6.23,
+        "score": 0.0003
+      }
+    },
+    "GO": {
+      "nome": "Goias",
+      "registros": 2018,
+      "anomalias": 2,
+      "pct_anomalias": 0.1,
+      "pior_caso": {
+        "municipio": "GOIATUBA",
+        "revenda": "AUTO POSTO VIP LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 3.94,
+        "score": 1.5314
+      }
+    },
+    "MA": {
+      "nome": "Maranhao",
+      "registros": 965,
+      "anomalias": 48,
+      "pct_anomalias": 4.97,
+      "pior_caso": {
+        "municipio": "BALSAS",
+        "revenda": "PETRO COMERCIO DE COMBUSTIVEIS LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 5.69,
+        "score": 0.9686
+      }
+    },
+    "MG": {
+      "nome": "Minas Gerais",
+      "registros": 5464,
+      "anomalias": 81,
+      "pct_anomalias": 1.48,
+      "pior_caso": {
+        "municipio": "ITAUNA",
+        "revenda": "AUTO POSTO ALELUIA LTDA",
+        "produto": "GASOLINA",
+        "valor_venda": 5.86,
+        "score": 0.0001
+      }
+    },
+    "MS": {
+      "nome": "Mato Grosso do Sul",
+      "registros": 554,
+      "anomalias": 38,
+      "pct_anomalias": 6.86,
+      "pior_caso": {
+        "municipio": "CORUMBA",
+        "revenda": "AUTO POSTO UNIVERSITARIO LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 4.97,
+        "score": 6.2867
+      }
+    },
+    "MT": {
+      "nome": "Mato Grosso",
+      "registros": 967,
+      "anomalias": 0,
+      "pct_anomalias": 0.0,
+      "pior_caso": {
+        "municipio": "ALTA FLORESTA",
+        "revenda": "AUTO POSTO ITAOCA LTDA - ME",
+        "produto": "GASOLINA ADITIVADA",
+        "valor_venda": 7.9,
+        "score": -1.8477
+      }
+    },
+    "PA": {
+      "nome": "Para",
+      "registros": 1032,
+      "anomalias": 11,
+      "pct_anomalias": 1.07,
+      "pior_caso": {
+        "municipio": "ANANINDEUA",
+        "revenda": "GONCALVES & DIAS LTDA",
+        "produto": "GASOLINA ADITIVADA",
+        "valor_venda": 5.59,
+        "score": 1.0631
+      }
+    },
+    "PB": {
+      "nome": "Paraiba",
+      "registros": 791,
+      "anomalias": 26,
+      "pct_anomalias": 3.29,
+      "pior_caso": {
+        "municipio": "JOAO PESSOA",
+        "revenda": "PETROBEL - PETROLEO BELTRAO LTDA",
+        "produto": "GASOLINA",
+        "valor_venda": 6.89,
+        "score": 0.5769
+      }
+    },
+    "PE": {
+      "nome": "Pernambuco",
+      "registros": 2143,
+      "anomalias": 31,
+      "pct_anomalias": 1.45,
+      "pior_caso": {
+        "municipio": "SERRA TALHADA",
+        "revenda": "COMERCIAL ALTO SANTO LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 6.49,
+        "score": 19.5593
+      }
+    },
+    "PI": {
+      "nome": "Piaui",
+      "registros": 669,
+      "anomalias": 36,
+      "pct_anomalias": 5.38,
+      "pior_caso": {
+        "municipio": "PARNAIBA",
+        "revenda": "POSTO ILHA GRANDE EIRELI",
+        "produto": "GASOLINA",
+        "valor_venda": 6.39,
+        "score": 0.1115
+      }
+    },
+    "PR": {
+      "nome": "Parana",
+      "registros": 3551,
+      "anomalias": 36,
+      "pct_anomalias": 1.01,
+      "pior_caso": {
+        "municipio": "LONDRINA",
+        "revenda": "AUTO POSTO TAQUARI DE LONDRINA EIRELI",
+        "produto": "ETANOL",
+        "valor_venda": 3.79,
+        "score": 2.9076
+      }
+    },
+    "RJ": {
+      "nome": "Rio de Janeiro",
+      "registros": 3678,
+      "anomalias": 66,
+      "pct_anomalias": 1.79,
+      "pior_caso": {
+        "municipio": "NOVA IGUACU",
+        "revenda": "POSTO KM 13 DA DUTRA LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 6.39,
+        "score": 11.3918
+      }
+    },
+    "RN": {
+      "nome": "Rio Grande do Norte",
+      "registros": 525,
+      "anomalias": 11,
+      "pct_anomalias": 2.1,
+      "pior_caso": {
+        "municipio": "CAICO",
+        "revenda": "AUTO POSTO IRMAOS LTDA",
+        "produto": "GASOLINA ADITIVADA",
+        "valor_venda": 6.99,
+        "score": 0.3102
+      }
+    },
+    "RO": {
+      "nome": "Rondonia",
+      "registros": 639,
+      "anomalias": 15,
+      "pct_anomalias": 2.35,
+      "pior_caso": {
+        "municipio": "ARIQUEMES",
+        "revenda": "ARIQUEMES COMERCIO DE OLEO DIESEL LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 6.23,
+        "score": 9.6824
+      }
+    },
+    "RR": {
+      "nome": "Roraima",
+      "registros": 162,
+      "anomalias": 4,
+      "pct_anomalias": 2.47,
+      "pior_caso": {
+        "municipio": "BOA VISTA",
+        "revenda": "ARNOGAS & CIA LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 4.99,
+        "score": 0.658
+      }
+    },
+    "RS": {
+      "nome": "Rio Grande do Sul",
+      "registros": 3817,
+      "anomalias": 110,
+      "pct_anomalias": 2.88,
+      "pior_caso": {
+        "municipio": "URUGUAIANA",
+        "revenda": "POSTO SAO MATHEUS COMERCIO DE COMBUSTIVEIS LTDA",
+        "produto": "GASOLINA",
+        "valor_venda": 9.08,
+        "score": 21.2491
+      }
+    },
+    "SC": {
+      "nome": "Santa Catarina",
+      "registros": 1787,
+      "anomalias": 0,
+      "pct_anomalias": 0.0,
+      "pior_caso": {
+        "municipio": "FLORIANOPOLIS",
+        "revenda": "COLONIAL PRODUTOS E SERVICOS LTDA",
+        "produto": "GASOLINA",
+        "valor_venda": 6.79,
+        "score": -0.0431
+      }
+    },
+    "SE": {
+      "nome": "Sergipe",
+      "registros": 376,
+      "anomalias": 0,
+      "pct_anomalias": 0.0,
+      "pior_caso": {
+        "municipio": "LAGARTO",
+        "revenda": "AUTO POSTO A & R LTDA",
+        "produto": "GASOLINA ADITIVADA",
+        "valor_venda": 6.32,
+        "score": -0.7448
+      }
+    },
+    "SP": {
+      "nome": "Sao Paulo",
+      "registros": 15534,
+      "anomalias": 340,
+      "pct_anomalias": 2.19,
+      "pior_caso": {
+        "municipio": "BARUERI",
+        "revenda": "POSTO DE SERVICOS DUQUE ALPHAVILLE LTDA",
+        "produto": "GASOLINA",
+        "valor_venda": 9.29,
+        "score": 16.2248
+      }
+    },
+    "TO": {
+      "nome": "Tocantins",
+      "registros": 337,
+      "anomalias": 7,
+      "pct_anomalias": 2.08,
+      "pior_caso": {
+        "municipio": "PARAISO DO TOCANTINS",
+        "revenda": "MEDEIROS COMERCIO VAREJISTA DE COMBUSTIVEIS LTDA",
+        "produto": "ETANOL",
+        "valor_venda": 5.9,
+        "score": 2.6639
+      }
+    }
+  },
+  "top_nacional": [
+    {
+      "estado": "RS",
+      "municipio": "URUGUAIANA",
+      "revenda": "POSTO SAO MATHEUS COMERCIO DE COMBUSTIVEIS LTDA",
+      "produto": "GASOLINA",
+      "valor_venda": 9.08,
+      "score": 21.24908591999248
+    },
+    {
+      "estado": "PE",
+      "municipio": "SERRA TALHADA",
+      "revenda": "COMERCIAL ALTO SANTO LTDA",
+      "produto": "ETANOL",
+      "valor_venda": 6.49,
+      "score": 19.559252695088457
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "POSTO DE SERVICOS DUQUE ALPHAVILLE LTDA",
+      "produto": "GASOLINA",
+      "valor_venda": 9.29,
+      "score": 16.224783945886365
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "AUTO POSTO DUQUE CONDE ALPHAVILLE LTDA",
+      "produto": "GASOLINA ADITIVADA",
+      "valor_venda": 9.59,
+      "score": 15.471596726290517
+    },
+    {
+      "estado": "SP",
+      "municipio": "GUARUJA",
+      "revenda": "CENTRO AUTOMOTIVO GUARUJA 3 LTDA",
+      "produto": "GASOLINA",
+      "valor_venda": 9.19,
+      "score": 15.158564398440463
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "CENTRO AUTOMOTIVO ALPHA CENTER LTDA",
+      "produto": "GASOLINA",
+      "valor_venda": 9.19,
+      "score": 15.158564398440463
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "FGN COMERCIAL LTDA",
+      "produto": "GASOLINA",
+      "valor_venda": 9.19,
+      "score": 15.158564398440463
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "AUTO POSTO DUQUE CONDE ALPHAVILLE LTDA",
+      "produto": "GASOLINA",
+      "valor_venda": 9.19,
+      "score": 15.158564398440463
+    },
+    {
+      "estado": "SP",
+      "municipio": "GUARUJA",
+      "revenda": "CENTRO AUTOMOTIVO GUARUJA 3 LTDA",
+      "produto": "GASOLINA ADITIVADA",
+      "valor_venda": 9.49,
+      "score": 14.340323347451083
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "CENTRO AUTOMOTIVO ALPHA CENTER LTDA",
+      "produto": "GASOLINA ADITIVADA",
+      "valor_venda": 9.49,
+      "score": 14.340323347451083
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "FGN COMERCIAL LTDA",
+      "produto": "GASOLINA ADITIVADA",
+      "valor_venda": 9.49,
+      "score": 14.340323347451083
+    },
+    {
+      "estado": "SP",
+      "municipio": "BARUERI",
+      "revenda": "POSTO DE SERVICOS DUQUE ALPHAVILLE LTDA",
+      "produto": "GASOLINA ADITIVADA",
+      "valor_venda": 9.29,
+      "score": 13.410018300106515
+    },
+    {
+      "estado": "RJ",
+      "municipio": "NOVA IGUACU",
+      "revenda": "POSTO KM 13 DA DUTRA LTDA",
+      "produto": "ETANOL",
+      "valor_venda": 6.39,
+      "score": 11.391789098639709
+    },
+    {
+      "estado": "SP",
+      "municipio": "SAO PAULO",
+      "revenda": "SENA PARK AUTO POSTO LTDA",
+      "produto": "GASOLINA ADITIVADA",
+      "valor_venda": 8.89,
+      "score": 11.048622439582118
+    },
+    {
+      "estado": "RO",
+      "municipio": "ARIQUEMES",
+      "revenda": "ARIQUEMES COMERCIO DE OLEO DIESEL LTDA",
+      "produto": "ETANOL",
+      "valor_venda": 6.23,
+      "score": 9.682363302178565
+    }
+  ],
+  "historico": [
+    {
+      "mes_referencia": "2025-12",
+      "total_registros": 52336,
+      "total_anomalias": 943,
+      "pct_anomalias": 1.8
+    }
+  ]
+}

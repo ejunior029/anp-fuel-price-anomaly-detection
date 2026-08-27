@@ -7,6 +7,9 @@
 [![pandas](https://img.shields.io/badge/pandas-3.0-150458?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
 [![Jupyter](https://img.shields.io/badge/Jupyter-notebooks-F37626?logo=jupyter&logoColor=white)](https://jupyter.org/)
 [![Data source](https://img.shields.io/badge/data-ANP%20(gov.br)-009c3b)](https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/serie-historica-de-precos-de-combustiveis)
+[![Live map](https://img.shields.io/badge/live%20map-updated%20monthly-57c7ff)](https://ejunior029.github.io/anp-fuel-price-anomaly-detection/)
+
+**🗺️ [See the live map →](https://ejunior029.github.io/anp-fuel-price-anomaly-detection/)** — refreshed automatically every month by a GitHub Actions workflow that scores the newest ANP release with the trained model. No server, no manual step.
 
 ---
 
@@ -28,6 +31,7 @@ Spoiler: yes — and the four algorithms we tried disagree with each other in ge
 | 🧪 **Evaluation trick** | Synthetic anomaly injection to get real precision/recall without a labeled dataset |
 | 🏆 **Best result** | One-Class SVM — F1 ≈ **0.68**, recall = **1.00**, PR-AUC ≈ **1.00** |
 | 😮 **Best plot twist** | LOF's score ranks anomalies well (ROC-AUC 0.91) but its default threshold flags **zero** of them |
+| 🔴 **Live** | A [choropleth map](https://ejunior029.github.io/anp-fuel-price-anomaly-detection/) re-scores the newest ANP release automatically, every month |
 
 ## Why this dataset is a great anomaly-detection playground
 
@@ -72,6 +76,24 @@ Every notebook opens with a plain-language intro explaining what it does and why
 
 - **There's no free ground truth — so we built one.** Since ANP doesn't label anomalies, the evaluation notebook injects synthetic price anomalies (both extreme 2-4x distortions and subtler 1.3-1.8x ones) into the test set only, purely to compute honest precision/recall/PR-AUC without ever letting the training data see a fabricated anomaly.
 
+## The live map
+
+The notebooks are static — the map isn't. [**ejunior029.github.io/anp-fuel-price-anomaly-detection**](https://ejunior029.github.io/anp-fuel-price-anomaly-detection/) is a self-contained static page (inline SVG map of Brazil, no map-tile service, no external JS) that shows the current month's anomaly rate per state, the single worst offender in each one, and a national top-15 list.
+
+```
+GitHub Actions (cron, 5th of every month)
+        ↓
+src/pipeline_mensal.py  → downloads the newest ANP CSV
+                         → scores it with the ALREADY-TRAINED models/*.joblib (no retraining)
+                         → writes docs/dados/latest.json
+        ↓
+GitHub Pages serves docs/ → the map fetches latest.json client-side and colors itself in
+```
+
+No servers to babysit — it's a static file that gets rewritten once a month by a scheduled job and re-published by GitHub Pages. `workflow_dispatch` is also enabled, so it can be triggered on demand from the Actions tab instead of waiting for the 5th.
+
+One honest caveat, stated on the page itself: states with few records (e.g. Acre, Amapá) get noisier percentages — a handful of stations can swing the rate a lot — and raw price is still one of the model's features, so historically expensive states can look more "anomalous" than they really are. Read it as a lead for investigation, not a verdict.
+
 ## Repository structure
 
 ```
@@ -83,11 +105,16 @@ Anomalias/
 │   ├── 03_modelagem_comparacao.ipynb    # 4 models compared side by side
 │   └── 04_avaliacao_tuning.ipynb        # synthetic-anomaly evaluation + hyperparameter tuning
 ├── src/
-│   ├── data.py         # load & clean the raw ANP CSV
-│   ├── features.py     # ReferenciaPrecos (train-only medians) + preprocessing pipeline
-│   ├── models.py       # the 4 anomaly detectors, built with comparable hyperparameters
-│   └── evaluation.py   # synthetic anomaly injection + precision/recall/F1/ROC-AUC/PR-AUC
-├── models/              # saved preprocessor + trained models (.joblib, gitignored)
+│   ├── data.py             # load & clean the raw ANP CSV
+│   ├── features.py         # ReferenciaPrecos (train-only medians) + preprocessing pipeline
+│   ├── models.py           # the 4 anomaly detectors, built with comparable hyperparameters
+│   ├── evaluation.py       # synthetic anomaly injection + precision/recall/F1/ROC-AUC/PR-AUC
+│   └── pipeline_mensal.py  # monthly scoring script that feeds the live map (see below)
+├── models/              # trained artifacts — mostly gitignored, EXCEPT the 3 files
+│                        # pipeline_mensal.py depends on (referencia_precos, preprocessador,
+│                        # melhor_modelo) — those are the deployed production model
+├── docs/                # the live map: index.html + dados/latest.json, served by GitHub Pages
+├── .github/workflows/   # atualizar_mapa.yml — the monthly GitHub Actions job
 ├── reports/             # generated charts and result tables (gitignored)
 ├── assets/              # curated charts checked into the repo, used in this README
 └── requirements.txt
@@ -128,7 +155,8 @@ Rename it to `precos_combustiveis_anp_2025-12.csv` (or update `CAMINHO_DADOS` in
 - Extend the feature set with time (is this station's price drifting week over week?) instead of a single monthly snapshot.
 - Try `HistGradientBoosting`-based novelty detection or an autoencoder reconstruction-error approach for comparison.
 - Cross-validate the synthetic-anomaly evaluation across multiple injection seeds to get confidence intervals on F1, not just a point estimate.
-- Wrap the best model + preprocessor behind a tiny CLI/API that scores a new monthly ANP file automatically.
+- Retrain (not just re-score) periodically as more months accumulate, with a check that the new model doesn't silently regress on the synthetic-anomaly benchmark before it replaces `models/melhor_modelo.joblib`.
+- Turn the single-point "worst case per state" into a small drill-down list (top 3-5) directly on the live map.
 
 ---
 
