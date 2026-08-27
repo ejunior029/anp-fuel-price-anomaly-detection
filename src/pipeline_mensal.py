@@ -50,9 +50,14 @@ def baixar_csv(ano, mes, destino):
     return True
 
 
-def detectar_mes_mais_recente(max_tentativas=3):
+def detectar_mes_mais_recente(max_tentativas=14):
     """Tenta o mes atual e volta ate `max_tentativas` meses se o arquivo
-    ainda nao tiver sido publicado pela ANP."""
+    ainda nao tiver sido publicado pela ANP.
+
+    A ANP as vezes fica meses em atraso na publicacao (ja observamos um
+    atraso de 8 meses em producao), entao a janela de busca precisa ser
+    generosa — bem maior do que os 2-3 meses que pareceriam suficientes
+    em um cenario "normal"."""
     hoje = date.today()
     ano, mes = hoje.year, hoje.month
     tmp = RAIZ / "data" / "_tmp_deteccao.csv"
@@ -63,7 +68,10 @@ def detectar_mes_mais_recente(max_tentativas=3):
         mes -= 1
         if mes == 0:
             mes, ano = 12, ano - 1
-    raise RuntimeError("Nenhum dos ultimos meses tem arquivo publicado pela ANP ainda.")
+    raise RuntimeError(
+        f"Nenhum dos ultimos {max_tentativas} meses (a partir de {hoje.year}-{hoje.month:02d}) "
+        "tem arquivo publicado pela ANP ainda."
+    )
 
 
 def carregar_dados_bruto(caminho):
