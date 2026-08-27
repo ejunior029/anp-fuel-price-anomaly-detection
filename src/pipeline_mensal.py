@@ -13,6 +13,7 @@ preprocessador.joblib, melhor_modelo.joblib).
 """
 import argparse
 import json
+import socket
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -20,6 +21,12 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import requests
+import urllib3.util.connection as _urllib3_conn
+
+# www.gov.br tem endereco IPv6, e runners do GitHub Actions costumam nao ter
+# rota IPv6 funcional para a internet ("Network is unreachable" mesmo com
+# IPv4 acessivel). Forcamos urllib3 (usado por `requests`) a so tentar IPv4.
+_urllib3_conn.allowed_gai_family = lambda: socket.AF_INET
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))  # permite `from src.xxx import ...` mesmo rodando este arquivo direto
