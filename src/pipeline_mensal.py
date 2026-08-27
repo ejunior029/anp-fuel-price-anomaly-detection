@@ -61,6 +61,7 @@ def detectar_mes_mais_recente(max_tentativas=14):
     hoje = date.today()
     ano, mes = hoje.year, hoje.month
     tmp = RAIZ / "data" / "_tmp_deteccao.csv"
+    tmp.parent.mkdir(parents=True, exist_ok=True)  # data/ nao existe em um checkout limpo (esta no .gitignore)
     for _ in range(max_tentativas):
         if baixar_csv(ano, mes, tmp):
             tmp.unlink(missing_ok=True)
