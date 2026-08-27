@@ -1,6 +1,6 @@
 name: Atualizar mapa de anomalias
 
-on:
+"on":
   schedule:
     # Todo dia 5 do mes, as 12:00 UTC — da tempo da ANP publicar o
     # levantamento do mes anterior antes da gente tentar buscar.
