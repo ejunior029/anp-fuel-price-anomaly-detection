@@ -3,6 +3,19 @@
 Fonte: Agencia Nacional do Petroleo, Gas Natural e Biocombustiveis (ANP)
 Serie historica de levantamento de precos de revenda - gasolina e etanol.
 https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/serie-historica-de-precos-de-combustiveis
+
+IMPORTANTE — este modulo NAO baixa nada da internet. `carregar_dados` so
+le e limpa um CSV que ja esta no seu disco; ele nao sabe (nem precisa
+saber) de onde esse arquivo veio.
+
+Para os notebooks (01 a 04), o download e MANUAL: baixe o CSV do mes que
+quiser direto da ANP (troque {ano} e {mes:02d} na URL abaixo, ex.:
+2025/precos-gasolina-etanol-12.csv para dezembro/2025) e salve em `data/`:
+
+    https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/shpc/dsan/{ano}/precos-gasolina-etanol-{mes:02d}.csv
+
+Só em producao (`src/pipeline_mensal.py`) esse download acontece sozinho
+— e a funcao que faz isso (`baixar_csv`) mora la, nao aqui.
 """
 import pandas as pd
 
@@ -25,7 +38,11 @@ COLUNAS = {
 
 
 def carregar_dados(caminho):
-    """Le o CSV bruto da ANP e devolve um DataFrame limpo.
+    """Le o CSV bruto da ANP (ja baixado manualmente, ver topo do arquivo)
+    e devolve um DataFrame limpo.
+
+    `caminho` precisa apontar para um arquivo que ja existe em disco —
+    esta funcao nao baixa nada.
 
     O arquivo usa ';' como separador, ',' como separador decimal e
     codificacao UTF-8 com BOM.
