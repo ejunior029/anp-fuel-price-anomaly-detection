@@ -6,57 +6,27 @@ Uso:
     python src/pipeline_mensal.py                       # detecta o mes mais recente sozinho
     python src/pipeline_mensal.py --ano 2025 --mes 12    # forca um mes especifico
 
-Pensado para rodar tanto localmente (sua maquina) quanto no GitHub Actions
-(.github/workflows/atualizar_mapa.yml, agendado para todo dia 5 do mes),
-reaproveitando os artefatos de producao salvos em models/ pelo notebook 04
-(referencia_precos.joblib, preprocessador.joblib, melhor_modelo.joblib).
+Fluxo: ANP (CSV) -> limpeza -> features/modelo ja treinados -> agregacao
+por estado + ranking nacional -> docs/dados/latest.json -> mapa.
 
-VISAO GERAL DO FLUXO (para quem esta vendo isso pela primeira vez):
-
-    ANP (site)  --(1. download)-->  CSV do mes
-                                        |
-                                (2. limpeza, igual ao notebook 01)
-                                        |
-                                (3. features + modelo JA TREINADOS)
-                                        |
-                                (4. agregacao por estado + ranking nacional)
-                                        |
-                                        v
-                            docs/dados/latest.json  --> consumido pelo
-                                                         mapa em docs/index.html
-
-Este arquivo e dividido em blocos grandes (BLOCO 1, 2, 3...) na ordem em
-que o `main()` os usa, cada um com objetivo e racional explicados antes do
-codigo — a ideia e dar para ler de cima para baixo como um roteiro de aula.
+Dividido em blocos numerados na ordem em que o `main()` os usa, cada um
+com objetivo e racional resumidos antes do codigo.
 """
 
 
 ########################################################################
-# BLOCO 1 — CONFIGURACAO DO AMBIENTE E COMPATIBILIDADE COM O GITHUB ACTIONS
+# BLOCO 1 — AMBIENTE E COMPATIBILIDADE COM O GITHUB ACTIONS
 ########################################################################
-# Objetivo: deixar prontas as bibliotecas e os ajustes de ambiente ANTES de
-# qualquer logica de negocio do pipeline.
+# Objetivo: imports e 2 ajustes que so importam quando isto roda no
+# runner do GitHub Actions (nao na sua maquina local).
 #
-# Racional: este script roda em dois lugares bem diferentes — a maquina
-# local (onde tudo "sempre funciona") e o runner do GitHub Actions (uma
-# maquina efemera na nuvem, recriada do zero a cada execucao). Duas
-# pegadinhas reais que so aparecem no runner e que precisam ser corrigidas
-# aqui, no topo do arquivo, antes de qualquer requisicao de rede:
-#
-#   1) o runner do GitHub Actions frequentemente NAO tem rota IPv6
-#      funcional para a internet, mesmo quando o sistema operacional
-#      "acha" que tem. O site da ANP (www.gov.br) tem endereco IPv6, e a
-#      biblioteca `requests` tenta esse caminho primeiro por padrao — o
-#      resultado e "Network is unreachable", um erro dificil de entender
-#      se voce nao sabe que e um problema de infraestrutura do runner, e
-#      nao do seu codigo. A correcao: forcar a biblioteca de rede
-#      (urllib3, usada por baixo dos panos pelo `requests`) a so tentar
-#      IPv4.
-#   2) `src/pipeline_mensal.py` fica DENTRO da pasta `src/`, mas precisa
-#      importar outros modulos como se `src` fosse um pacote visto da raiz
-#      do projeto (`from src.data import ...`). Isso so funciona se a raiz
-#      do projeto estiver no `sys.path` — por isso o `sys.path.insert`
-#      logo abaixo, antes de qualquer `from src.xxx import ...`.
+# Racional:
+#  1) o runner as vezes nao tem rota IPv6 funcional; o site da ANP tem
+#     endereco IPv6 e `requests` tenta ele primeiro -> "Network is
+#     unreachable". Forcamos IPv4.
+#  2) este arquivo esta dentro de src/, mas importa `from src.xxx import`
+#     como se a raiz do projeto fosse o pacote — por isso ela precisa
+#     entrar no sys.path manualmente.
 ########################################################################
 import argparse
 import json
@@ -70,33 +40,20 @@ import pandas as pd
 import requests
 import urllib3.util.connection as _urllib3_conn
 
-# Correcao 1: forcar IPv4 (ver explicacao do BLOCO 1 acima).
-_urllib3_conn.allowed_gai_family = lambda: socket.AF_INET
+_urllib3_conn.allowed_gai_family = lambda: socket.AF_INET  # forca IPv4
 
-# Correcao 2: colocar a raiz do projeto no sys.path (ver explicacao acima).
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 
 
 ########################################################################
-# BLOCO 2 — CONSTANTES E PARAMETROS DO PROJETO
+# BLOCO 2 — CONSTANTES DO PROJETO
 ########################################################################
-# Objetivo: centralizar, em um unico lugar, tudo que pode mudar sem exigir
-# reescrever a logica do pipeline — a URL de onde os dados vem, e os nomes
-# "bonitos" dos estados que aparecem na pagina publica.
+# Objetivo: URL da ANP e nomes por extenso dos estados, num so lugar.
 #
-# Racional: `URL_BASE` usa um padrao fixo (ano + mes com dois digitos) que
-# a propria ANP mantem estavel mes a mes — descobrimos esse padrao
-# investigando o site manualmente, e ele e o unico lugar do codigo que
-# "conhece" a estrutura de pastas da ANP. Se um dia a ANP mudar o
-# endereco, so este trecho precisa ser ajustado.
-#
-# `NOME_ESTADO` existe porque o dataset da ANP so traz a sigla do estado
-# (ex.: "PI"), mas a pagina do mapa (docs/index.html) precisa do nome por
-# extenso para o texto ficar legivel para quem esta vendo ("Piaui" em vez
-# de so "PI"). Os nomes ficam com acentuacao correta mesmo na versao em
-# ingles da pagina — nomes proprios brasileiros nao se traduzem, so se
-# escrevem certo.
+# Racional: o dataset so traz a sigla ("PI"); a pagina do mapa precisa do
+# nome completo. Nomes proprios brasileiros nao se traduzem — so ficam
+# com acento certo, mesmo na versao em ingles da pagina.
 ########################################################################
 URL_BASE = (
     "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/"
@@ -115,23 +72,14 @@ NOME_ESTADO = {
 
 
 ########################################################################
-# BLOCO 3 — DOWNLOAD DOS DADOS BRUTOS DA ANP
+# BLOCO 3 — DOWNLOAD DO CSV DA ANP
 ########################################################################
-# Objetivo: dado um ano e um mes, tentar baixar o CSV correspondente e
-# dizer (True/False) se deu certo — sem lancar excecao quando o arquivo
-# simplesmente ainda nao existe.
+# Objetivo: baixar o CSV de um mes e devolver True/False (sem estourar
+# erro se o arquivo simplesmente ainda nao existir).
 #
-# Racional: essa funcao e usada de DUAS formas diferentes mais adiante —
-# no BLOCO 4, para "sondar" varios meses ate achar um que exista (e um
-# 404 ali e esperado, nao um erro); e no BLOCO 6, para baixar de verdade o
-# mes que sera processado. Por isso ela devolve um booleano simples em vez
-# de estourar erro, deixando quem chama decidir o que fazer com o
-# resultado.
-#
-# O `len(resp.content) < 1000` e uma segunda checagem de seguranca: a ANP
-# as vezes devolve HTTP 200 com uma pagina de erro em HTML minuscula em
-# vez do CSV de verdade — um CSV real desse dataset tem varios megabytes,
-# entao qualquer resposta muito pequena e tratada como falha.
+# Racional: usada tanto para "sondar" varios meses no BLOCO 4 (404 e
+# esperado ali) quanto para o download de verdade no BLOCO 6. O tamanho
+# minimo evita cair numa pagina de erro em HTML disfarcada de HTTP 200.
 ########################################################################
 def baixar_csv(ano, mes, destino):
     """Baixa o CSV da ANP para `destino`. Devolve True se conseguiu."""
@@ -144,27 +92,15 @@ def baixar_csv(ano, mes, destino):
 
 
 ########################################################################
-# BLOCO 4 — DETECCAO AUTOMATICA DO MES MAIS RECENTE DISPONIVEL
+# BLOCO 4 — DETECTAR O MES MAIS RECENTE DISPONIVEL
 ########################################################################
-# Objetivo: descobrir sozinho qual e o mes mais recente que a ANP ja
-# publicou, sem precisar de intervencao manual todo mes.
+# Objetivo: descobrir sozinho o mes mais recente ja publicado pela ANP.
 #
-# Racional (a parte mais contraintuitiva do pipeline): seria tentador
-# simplesmente usar o mes atual do calendario. O problema e que a ANP
-# **nao publica em tempo real** — ja observamos, em producao, um atraso
-# de ATE 8 MESES entre o mes corrente e o ultimo arquivo realmente
-# disponivel no site deles. Ou seja: em agosto de 2026, o mes mais recente
-# publicado podia muito bem ainda ser dezembro de 2025.
-#
-# Por isso esta funcao nao pergunta "que mes e hoje?" e sim "qual e o mes
-# mais recente que EXISTE DE VERDADE no servidor da ANP?" — ela comeca no
-# mes atual e vai voltando, mes a mes, testando com `baixar_csv` (BLOCO 3)
-# ate encontrar um arquivo que realmente baixa. `max_tentativas=14` da
-# margem generosa para esse atraso sem virar um loop infinito.
-#
-# Consequencia pratica: quando a ANP publicar um mes novo, a PROXIMA
-# execucao do pipeline (o cron mensal ou um disparo manual) vai encontrar
-# esse mes novo sozinha — nenhuma linha de codigo precisa mudar.
+# Racional: a ANP nao publica em tempo real — ja vimos ate 8 meses de
+# atraso em producao. Por isso a funcao nao assume "mes atual"; ela testa
+# de tras para frente, mes a mes, ate achar um arquivo que baixa de
+# verdade. Assim, quando a ANP publicar um mes novo, a proxima execucao
+# encontra sozinha, sem mudar codigo.
 ########################################################################
 def detectar_mes_mais_recente(max_tentativas=14):
     """Tenta o mes atual e volta ate `max_tentativas` meses se o arquivo
@@ -172,7 +108,7 @@ def detectar_mes_mais_recente(max_tentativas=14):
     hoje = date.today()
     ano, mes = hoje.year, hoje.month
     tmp = RAIZ / "data" / "_tmp_deteccao.csv"
-    tmp.parent.mkdir(parents=True, exist_ok=True)  # data/ nao existe em um checkout limpo (esta no .gitignore)
+    tmp.parent.mkdir(parents=True, exist_ok=True)  # data/ nao existe em um checkout limpo
     for _ in range(max_tentativas):
         if baixar_csv(ano, mes, tmp):
             tmp.unlink(missing_ok=True)
@@ -187,19 +123,12 @@ def detectar_mes_mais_recente(max_tentativas=14):
 
 
 ########################################################################
-# BLOCO 5 — CARREGAMENTO E LIMPEZA DOS DADOS
+# BLOCO 5 — CARREGAR E LIMPAR OS DADOS
 ########################################################################
-# Objetivo: transformar o CSV bruto (ja baixado) num DataFrame limpo,
-# usando exatamente a mesma limpeza que os notebooks usam.
+# Objetivo: transformar o CSV baixado num DataFrame limpo.
 #
-# Racional: a limpeza (renomear colunas, converter datas, etc.) ja existe
-# em `src/data.py` e e usada pelos 4 notebooks. Este pipeline de producao
-# reaproveita a MESMA funcao em vez de reescrever a logica — assim, se um
-# dia a limpeza mudar (ex.: a ANP alterar uma coluna), so precisa ser
-# corrigida em um lugar, e notebooks e producao continuam consistentes
-# entre si. O import fica dentro da funcao (em vez de no topo do arquivo)
-# so para deixar explicito, aqui no BLOCO 5, exatamente qual funcao esta
-# sendo reaproveitada.
+# Racional: reaproveita `src/data.py`, a mesma limpeza usada pelos 4
+# notebooks — se a limpeza mudar um dia, muda num lugar so.
 ########################################################################
 def carregar_dados_bruto(caminho):
     """Mesma limpeza do src.data.carregar_dados, mas a partir de um
@@ -209,37 +138,25 @@ def carregar_dados_bruto(caminho):
 
 
 ########################################################################
-# BLOCO 6 — SCORING: APLICAR O MODELO JA TREINADO (SEM RETREINAR)
+# BLOCO 6 — SCORING COM O MODELO JA TREINADO (SEM RETREINAR)
 ########################################################################
-# Objetivo: pegar os dados do mes (ja baixados e limpos) e classificar
-# cada registro como anomalo ou normal, usando o modelo de producao.
+# Objetivo: classificar cada registro do mes como anomalo ou normal.
 #
-# Racional (o principio mais importante deste arquivo): este pipeline
-# **nunca retreina** nada. `referencia_precos.joblib`, `preprocessador.joblib`
-# e `melhor_modelo.joblib` sao os MESMOS artefatos salvos pelo notebook 04
-# depois de todo o processo de tuning e avaliacao com anomalias sinteticas
-# — eles representam a versao do modelo que foi validada e "aprovada".
+# Racional: `referencia_precos`, `preprocessador` e `melhor_modelo` sao os
+# artefatos salvos pelo notebook 04 depois do tuning/avaliacao — a versao
+# "aprovada". Este pipeline so aplica (`.transform`/`.predict`), nunca
+# reajusta: treino (notebooks, com validacao) e inferencia (aqui, mensal
+# e automatico) ficam separados de proposito, para nao introduzir drift
+# silencioso a cada execucao. Retreinar deveria ser uma decisao explicita,
+# nao um efeito colateral do cron.
 #
-# Essa separacao entre TREINO (feito uma vez, nos notebooks, com cuidado e
-# validacao) e SCORING/INFERENCIA (feito todo mes, aqui, de forma rapida e
-# repetida) e um principio central de sistemas de ML em producao: você
-# quer poder pontuar dados novos com frequencia, sem correr o risco de
-# cada execucao aprender um modelo levemente diferente e sem re-validar
-# nada. Se um dia quisermos retreinar com mais meses de dado, isso deveria
-# ser uma decisao explicita (rodar os notebooks de novo, comparar com o
-# modelo atual, e so entao substituir os arquivos em `models/`) — nao algo
-# que acontece silenciosamente a cada execucao agendada.
-#
-# O restante da funcao (`rodar_pipeline`) tambem cobre os BLOCOS 7 e 8
-# (agregacao por estado e ranking nacional) porque, na pratica, e mais
-# didatico ver a sequencia completa — download -> limpeza -> scoring ->
-# agregacao — dentro de uma unica funcao coesa.
+# Esta funcao tambem cobre os BLOCOS 7 e 8 (agregacao e ranking), por
+# ficar mais didatico ver a sequencia inteira junta.
 ########################################################################
 def rodar_pipeline(ano, mes):
     from src.evaluation import calcular_metricas  # noqa: F401 (mantido para simetria com os notebooks)
     from src.models import prever_anomalias
 
-    # --- 6.1: garantir que o CSV do mes pedido esta em disco -----------
     caminho_csv = RAIZ / "data" / f"precos_combustiveis_anp_{ano}-{mes:02d}.csv"
     caminho_csv.parent.mkdir(exist_ok=True)
     if not caminho_csv.exists():
@@ -249,25 +166,14 @@ def rodar_pipeline(ano, mes):
 
     df = carregar_dados_bruto(caminho_csv)  # BLOCO 5
 
-    # --- 6.2: carregar os artefatos de producao JA TREINADOS ------------
-    # Estes 3 arquivos sao o unico "estado" que este pipeline preserva de
-    # execucao para execucao — sao commitados no repositorio (excecao
-    # deliberada no .gitignore) exatamente para que o GitHub Actions tenha
-    # acesso a eles sem precisar re-treinar nada.
+    # Artefatos de producao — commitados de proposito (excecao no
+    # .gitignore) para o GitHub Actions ter acesso sem re-treinar nada.
     referencia = joblib.load(RAIZ / "models" / "referencia_precos.joblib")
     preprocessador = joblib.load(RAIZ / "models" / "preprocessador.joblib")
     modelo = joblib.load(RAIZ / "models" / "melhor_modelo.joblib")
 
-    # --- 6.3: mesma engenharia de features do notebook 02 ---------------
-    # `referencia.transform` calcula o desvio percentual de cada preco em
-    # relacao a mediana do MESMO estado + produto (a feature mais
-    # importante do projeto, explicada em detalhe na EDA); o
-    # `preprocessador` aplica a mesma padronizacao/one-hot ajustada no
-    # treino. Nenhum dos dois e reajustado aqui — so `.transform`.
-    df_feat = referencia.transform(df)
+    df_feat = referencia.transform(df)  # mesma feature de desvio vs. mediana do notebook 02
     X = preprocessador.transform(df_feat)
-
-    # --- 6.4: a previsao propriamente dita -------------------------------
     rotulo, score = prever_anomalias(modelo, X)
 
     df_feat = df_feat.copy()
@@ -275,16 +181,10 @@ def rodar_pipeline(ano, mes):
     df_feat["score_anomalia"] = score
 
     ####################################################################
-    # BLOCO 7 — AGREGACAO POR ESTADO (O QUE ALIMENTA O MAPA)
+    # BLOCO 7 — AGREGACAO POR ESTADO (ALIMENTA O MAPA)
     ####################################################################
-    # Objetivo: resumir milhares de linhas individuais em UM registro por
-    # estado — exatamente o formato que o mapa (docs/index.html) precisa
-    # para colorir cada estado e mostrar o "pior caso" ao clicar nele.
-    #
-    # Racional: a pagina do mapa nao le o CSV inteiro (seria pesado e
-    # desnecessario no navegador) — ela le um JSON pequeno e ja resumido.
-    # Esse resumo e calculado aqui, no servidor/CI, uma vez por mes, nao a
-    # cada visita a pagina.
+    # Objetivo: resumir as linhas num registro por estado.
+    # Racional: o mapa le um JSON pequeno ja resumido, nao o CSV inteiro.
     ####################################################################
     por_estado = {}
     for uf, grupo in df_feat.groupby("estado"):
@@ -305,17 +205,11 @@ def rodar_pipeline(ano, mes):
         }
 
     ####################################################################
-    # BLOCO 8 — RANKING NACIONAL DAS MAIORES ANOMALIAS (TOP 15)
+    # BLOCO 8 — RANKING NACIONAL (TOP 15)
     ####################################################################
-    # Objetivo: alem do resumo por estado, montar uma lista unica com as
-    # 15 anomalias de maior score em todo o Brasil, para a tabela que
-    # aparece embaixo do mapa.
-    #
-    # Racional do `.drop_duplicates(...)`: o mesmo posto pode ser
-    # pesquisado mais de uma vez no mesmo mes pela ANP. Sem remover essas
-    # repeticoes, o "top 15" corria o risco de mostrar o MESMO posto 4 ou
-    # 5 vezes em vez de 15 casos realmente diferentes — o que e menos
-    # informativo (e menos interessante) para quem esta olhando o mapa.
+    # Objetivo: as 15 maiores anomalias do Brasil, para a tabela do mapa.
+    # Racional do drop_duplicates: o mesmo posto pode ser pesquisado mais
+    # de uma vez no mes — sem isso, o top 15 repetiria o mesmo caso.
     ####################################################################
     top_nacional = (
         df_feat.sort_values("score_anomalia", ascending=False)
@@ -340,17 +234,11 @@ def rodar_pipeline(ano, mes):
 ########################################################################
 # BLOCO 9 — HISTORICO MENSAL (SERIE TEMPORAL SEM BANCO DE DADOS)
 ########################################################################
-# Objetivo: alem do mes atual, manter tambem um pequeno historico
-# (mes -> totais) que alimenta o grafico de tendencia da pagina.
+# Objetivo: manter um historico mes -> totais para o grafico de tendencia.
 #
-# Racional: este projeto nao usa banco de dados — o "estado" inteiro do
-# pipeline mora num unico arquivo JSON versionado no git
-# (`docs/dados/latest.json`). Para nao perder o historico a cada execucao
-# (o `resumo` do BLOCO 6-8 so tem dados do mes atual), esta funcao le o
-# JSON anterior antes de sobrescreve-lo, junta a entrada nova, e devolve
-# tudo junto. Usar o `mes_referencia` como chave do dicionario garante que
-# rodar o pipeline duas vezes para o mesmo mes apenas ATUALIZA aquele mes
-# no historico, em vez de duplicar a entrada.
+# Racional: nao ha banco de dados — o "estado" mora no proprio JSON
+# versionado no git. Por isso le o JSON anterior antes de sobrescrever, e
+# usa `mes_referencia` como chave para atualizar (nao duplicar) o mes.
 ########################################################################
 def atualizar_historico(resumo, caminho_saida):
     """Le o JSON existente (se houver) e atualiza o mes atual, preservando
@@ -373,18 +261,13 @@ def atualizar_historico(resumo, caminho_saida):
 
 
 ########################################################################
-# BLOCO 10 — PONTO DE ENTRADA (CLI) E ORQUESTRACAO GERAL
+# BLOCO 10 — PONTO DE ENTRADA (CLI)
 ########################################################################
-# Objetivo: amarrar todos os blocos anteriores na ordem certa, e permitir
-# rodar o script tanto "no automatico" (sem argumentos, detecta o mes
-# sozinho — BLOCO 4) quanto "forcado" (com --ano/--mes, util para testar
-# um mes especifico ou reprocessar um mes antigo).
+# Objetivo: amarrar os blocos anteriores; rodar sozinho (detecta o mes,
+# BLOCO 4) ou forcado (--ano/--mes, util para testar um mes especifico).
 #
-# Racional do argparse: ter as duas formas de uso no mesmo script evita
-# duplicar codigo entre "modo producao" (GitHub Actions, sem argumentos)
-# e "modo debug local" (voce testando um mes especifico na sua maquina) —
-# e exatamente assim que este pipeline foi validado localmente antes de
-# ser publicado no workflow do GitHub Actions.
+# Racional: um so script para "modo producao" (Actions, sem argumentos) e
+# "modo debug local" (voce testando um mes na sua maquina).
 ########################################################################
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
