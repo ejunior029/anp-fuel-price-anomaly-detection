@@ -49,16 +49,46 @@ sys.path.insert(0, str(RAIZ))
 ########################################################################
 # BLOCO 2 — CONSTANTES DO PROJETO
 ########################################################################
-# Objetivo: URL da ANP e nomes por extenso dos estados, num so lugar.
+# Objetivo: URL(s) da ANP e nomes por extenso dos estados, num so lugar.
 #
-# Racional: o dataset so traz a sigla ("PI"); a pagina do mapa precisa do
-# nome completo. Nomes proprios brasileiros nao se traduzem — so ficam
-# com acento certo, mesmo na versao em ingles da pagina.
+# Racional dos DOIS padroes de URL: a ANP usava um nome de arquivo ate
+# dezembro/2025 e trocou para outro a partir de 2026 — sem aviso, no meio
+# da serie historica (`precos-gasolina-etanol-12.csv` virou
+# `01-dados-abertos-precos-gasolina-etanol.csv`). Por isso tentamos os
+# dois formatos, nessa ordem, em `baixar_csv`.
+#
+# Alem dos 2 padroes gerais, a ANP publicou pelo menos 3 meses com nomes
+# de arquivo que nao seguem NENHUM padrao previsivel — erros pontuais do
+# lado deles, verificados manualmente um a um (conferimos que o arquivo
+# de verdade existe atras de cada link, so o nome que esta "errado"):
+#   - fev/2026: erro de digitacao ("02-cados-abertos-preco-...", sem "s")
+#   - abr/2026: falta a extensao ".csv" no nome do arquivo
+#   - jun/2026: formato unico, com o ano-mes repetido no meio do nome
+# Guardamos essas 3 URLs literais em `EXCECOES_URL` (chave = (ano, mes))
+# como uma correcao pontual para um problema pontual — nao um 3º padrao
+# geral, porque nao ha garantia de que o proximo mes quebrado vai seguir
+# qualquer uma dessas variacoes. Um mes novo que nao bater nem nos 2
+# padroes gerais nem em `EXCECOES_URL` e tratado como "pulado" (BLOCO 10),
+# nao como erro fatal, para o backfill nao travar por causa de 1 mes.
+#
+# Nomes proprios dos estados nao se traduzem — so ficam com acento certo,
+# mesmo na versao em ingles da pagina do mapa.
 ########################################################################
-URL_BASE = (
+URL_PADROES = [
     "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/"
-    "arquivos/shpc/dsan/{ano}/precos-gasolina-etanol-{mes:02d}.csv"
-)
+    "arquivos/shpc/dsan/{ano}/precos-gasolina-etanol-{mes:02d}.csv",  # padrao ate dez/2025
+    "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/"
+    "arquivos/shpc/dsan/{ano}/{mes:02d}-dados-abertos-precos-gasolina-etanol.csv",  # padrao a partir de 2026
+]
+
+EXCECOES_URL = {
+    (2026, 2): "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/"
+               "arquivos/shpc/dsan/2026/02-cados-abertos-preco-gasolina-etanol.csv",
+    (2026, 4): "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/"
+               "arquivos/shpc/dsan/2026/04-dados-abertos-precos-gasolina-etanol",
+    (2026, 6): "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/"
+               "arquivos/shpc/dsan/2026/06-dados-abertos-precos-2026-06-gasolina-etanol.csv",
+}
 
 NOME_ESTADO = {
     "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá",
@@ -82,13 +112,21 @@ NOME_ESTADO = {
 # minimo evita cair numa pagina de erro em HTML disfarcada de HTTP 200.
 ########################################################################
 def baixar_csv(ano, mes, destino):
-    """Baixa o CSV da ANP para `destino`. Devolve True se conseguiu."""
-    url = URL_BASE.format(ano=ano, mes=mes)
-    resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
-    if resp.status_code != 200 or len(resp.content) < 1000:
-        return False
-    destino.write_bytes(resp.content)
-    return True
+    """Tenta `EXCECOES_URL` (mes com nome de arquivo fora do padrao,
+    conferido manualmente) e depois cada URL em `URL_PADROES`, nessa
+    ordem, ate uma funcionar. Baixa o CSV da ANP para `destino`.
+    Devolve True se conseguiu."""
+    urls = []
+    if (ano, mes) in EXCECOES_URL:
+        urls.append(EXCECOES_URL[(ano, mes)])
+    urls += [padrao.format(ano=ano, mes=mes) for padrao in URL_PADROES]
+
+    for url in urls:
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
+        if resp.status_code == 200 and len(resp.content) >= 1000:
+            destino.write_bytes(resp.content)
+            return True
+    return False
 
 
 ########################################################################
@@ -260,14 +298,63 @@ def atualizar_historico(resumo, caminho_saida):
     return resumo
 
 
+def ultimo_mes_no_historico(caminho_saida):
+    """Devolve (ano, mes) do mes mais recente ja salvo no historico, ou
+    None se o arquivo ainda nao existe (primeira execucao)."""
+    if not caminho_saida.exists():
+        return None
+    dados = json.loads(caminho_saida.read_text(encoding="utf-8"))
+    historico = dados.get("historico", [])
+    if not historico:
+        return None
+    mais_recente = max(h["mes_referencia"] for h in historico)
+    ano, mes = mais_recente.split("-")
+    return int(ano), int(mes)
+
+
+def proximo_mes(ano, mes):
+    """(ano, mes) seguinte, com virada de dezembro para janeiro do ano seguinte."""
+    mes += 1
+    if mes == 13:
+        mes, ano = 1, ano + 1
+    return ano, mes
+
+
+def meses_faltantes(ultimo_salvo, mais_recente_anp):
+    """Lista, em ordem cronologica, os meses entre `ultimo_salvo` (exclusive)
+    e `mais_recente_anp` (inclusive) — o "buraco" a preencher no backfill.
+
+    Se `ultimo_salvo` for None (primeira execucao) ou ja estiver em dia,
+    devolve so o `mais_recente_anp`, preservando o comportamento normal de
+    "um mes por execucao" no caso comum (sem atraso acumulado)."""
+    if ultimo_salvo is None or ultimo_salvo >= mais_recente_anp:
+        return [mais_recente_anp]
+    meses = []
+    atual = proximo_mes(*ultimo_salvo)
+    while atual <= mais_recente_anp:
+        meses.append(atual)
+        atual = proximo_mes(*atual)
+    return meses
+
+
 ########################################################################
-# BLOCO 10 — PONTO DE ENTRADA (CLI)
+# BLOCO 10 — PONTO DE ENTRADA (CLI), COM BACKFILL AUTOMATICO
 ########################################################################
 # Objetivo: amarrar os blocos anteriores; rodar sozinho (detecta o mes,
 # BLOCO 4) ou forcado (--ano/--mes, util para testar um mes especifico).
 #
-# Racional: um so script para "modo producao" (Actions, sem argumentos) e
-# "modo debug local" (voce testando um mes na sua maquina).
+# Racional do backfill: `detectar_mes_mais_recente` so devolve UM mes — o
+# mais novo disponivel. Isso e suficiente no caso normal (a automacao
+# roda todo mes, sem atraso acumulado), mas se o pipeline ficar parado
+# por um tempo (ou a ANP atrasar a publicacao, como ja aconteceu), varios
+# meses ficam de fora do `historico` de uma vez. Em vez de processar so o
+# mes mais novo e deixar um buraco no grafico de tendencia, comparamos
+# com o ultimo mes ja salvo (BLOCO 9) e processamos, em ordem, todos os
+# meses que faltam ate o mais recente — no caso comum isso e so 1 mes
+# (comportamento identico ao anterior), sem custo extra.
+#
+# --ano/--mes continuam forcando um unico mes especifico, sem backfill —
+# uteis para testar/reprocessar um mes pontual sem mexer no historico.
 ########################################################################
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -275,21 +362,37 @@ def main():
     parser.add_argument("--mes", type=int, default=None)
     args = parser.parse_args()
 
-    if args.ano and args.mes:
-        ano, mes = args.ano, args.mes
-    else:
-        ano, mes = detectar_mes_mais_recente()  # BLOCO 4
-
-    print(f"Processando referencia {ano}-{mes:02d}...")
-    resumo = rodar_pipeline(ano, mes)  # BLOCOS 5, 6, 7 e 8
-
     caminho_saida = RAIZ / "docs" / "dados" / "latest.json"
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
-    resumo = atualizar_historico(resumo, caminho_saida)  # BLOCO 9
 
-    caminho_saida.write_text(json.dumps(resumo, ensure_ascii=False, indent=2), encoding="utf-8")
+    if args.ano and args.mes:
+        meses_a_processar = [(args.ano, args.mes)]
+    else:
+        mais_recente = detectar_mes_mais_recente()  # BLOCO 4
+        ultimo_salvo = ultimo_mes_no_historico(caminho_saida)  # BLOCO 9
+        meses_a_processar = meses_faltantes(ultimo_salvo, mais_recente)  # BLOCO 9
+        if len(meses_a_processar) > 1:
+            print(f"Backfill: {len(meses_a_processar)} meses em atraso, processando um a um...")
+
+    meses_pulados = []
+    for ano, mes in meses_a_processar:
+        print(f"Processando referencia {ano}-{mes:02d}...")
+        try:
+            resumo = rodar_pipeline(ano, mes)  # BLOCOS 5, 6, 7 e 8
+        except RuntimeError as erro:
+            # Um mes que nao bate com nenhum padrao conhecido de URL (ver
+            # BLOCO 2) nao deve derrubar o backfill inteiro por causa de
+            # 1 mes fora do padrao do lado da ANP — pula e segue os demais.
+            print(f"  -> pulado ({erro})")
+            meses_pulados.append(f"{ano}-{mes:02d}")
+            continue
+        resumo = atualizar_historico(resumo, caminho_saida)  # BLOCO 9
+        caminho_saida.write_text(json.dumps(resumo, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"  -> {resumo['total_anomalias']} / {resumo['total_registros']} ({resumo['pct_anomalias']}%)")
+
     print(f"Salvo em {caminho_saida}")
-    print(f"Total de anomalias: {resumo['total_anomalias']} / {resumo['total_registros']} ({resumo['pct_anomalias']}%)")
+    if meses_pulados:
+        print(f"Meses pulados (URL fora dos padroes conhecidos): {', '.join(meses_pulados)}")
 
 
 if __name__ == "__main__":
