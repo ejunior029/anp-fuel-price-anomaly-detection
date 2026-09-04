@@ -9,13 +9,24 @@ le e limpa um CSV que ja esta no seu disco; ele nao sabe (nem precisa
 saber) de onde esse arquivo veio.
 
 Para os notebooks (01 a 04), o download e MANUAL: baixe o CSV do mes que
-quiser direto da ANP (troque {ano} e {mes:02d} na URL abaixo, ex.:
-2025/precos-gasolina-etanol-12.csv para dezembro/2025) e salve em `data/`:
+quiser direto da ANP e salve em `data/`. CUIDADO: a ANP trocou o nome do
+arquivo sem aviso a partir de 2026 — use o padrao certo pro mes desejado
+(prefixo comum: .../dados-abertos/arquivos/shpc/dsan/{ano}/...):
 
-    https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/shpc/dsan/{ano}/precos-gasolina-etanol-{mes:02d}.csv
+    Ate dezembro/2025:  precos-gasolina-etanol-{mes:02d}.csv
+    A partir de 2026:   {mes:02d}-dados-abertos-precos-gasolina-etanol.csv
+
+Ex.: dezembro/2025 -> .../dsan/2025/precos-gasolina-etanol-12.csv
+     julho/2026     -> .../dsan/2026/07-dados-abertos-precos-gasolina-etanol.csv
+
+Se nenhum dos dois padroes funcionar pro mes que voce quer, a ANP
+provavelmente publicou esse mes com um nome fora do padrao (ja aconteceu
+em fev, abr e jun/2026) — ache o link certo direto na pagina da serie
+historica e confira `EXCECOES_URL` em `src/pipeline_mensal.py`.
 
 Só em producao (`src/pipeline_mensal.py`) esse download acontece sozinho
-— e a funcao que faz isso (`baixar_csv`) mora la, nao aqui.
+— e a funcao que faz isso (`baixar_csv`, com os 2 padroes + excecoes)
+mora la, nao aqui.
 """
 import pandas as pd
 
